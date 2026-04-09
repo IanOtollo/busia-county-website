@@ -216,11 +216,13 @@ export default function Header() {
             )}
 
             <button
-              className="lg:hidden p-2 text-gov-black"
+              className="lg:hidden relative w-10 h-10 flex flex-col justify-center items-end gap-[5px] group overflow-hidden"
               onClick={() => setMobileOpen(true)}
               aria-label="Open menu"
             >
-              <Menu className="w-6 h-6" />
+              <span className="w-6 h-[2px] bg-gov-black rounded-full transition-all duration-300 group-hover:w-8 group-hover:bg-primary-green" />
+              <span className="w-6 h-[2px] bg-gov-black rounded-full transition-all duration-300 group-hover:bg-primary-green" />
+              <span className="w-4 h-[2px] bg-gov-black rounded-full transition-all duration-300 group-hover:w-6 group-hover:bg-primary-green" />
             </button>
           </div>
         </div>
@@ -230,9 +232,7 @@ export default function Header() {
       {sticky && <div className="h-20 md:h-24 w-full block" />}
 
       {/* Mobile Menu */}
-      {mobileOpen && (
-        <MobileMenu onClose={() => setMobileOpen(false)} />
-      )}
+      <MobileMenu isOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
     </header>
   );
 }
@@ -338,31 +338,56 @@ function LanguageSwitcher() {
   );
 }
 
-function MobileMenu({ onClose }: { onClose: () => void }) {
+function MobileMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const t = useTranslations();
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
+  // Prevent background scrolling when open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
   return (
-    <div className="fixed inset-0 z-[100] lg:hidden">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="absolute top-0 right-0 bottom-0 w-[300px] bg-white overflow-y-auto animate-slide-down">
-        <div className="flex items-center justify-between p-4 border-b border-gov-grey-border">
-          <div className="text-lg font-display font-bold text-primary-green">
-            {t("nav.home")}
+    <>
+      {/* Backdrop */}
+      <div 
+        className={`fixed inset-0 z-[105] bg-gov-black/60 backdrop-blur-sm transition-all duration-500 will-change-auto ${
+          isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      {/* Drawer */}
+      <div 
+        className={`fixed top-0 right-0 bottom-0 z-[106] w-[85vw] max-w-[400px] bg-white/95 backdrop-blur-xl shadow-2xl overflow-y-auto transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] flex flex-col ${
+          isOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        <div className="flex items-center justify-between p-6 border-b border-gov-grey-border/50 bg-white/50 sticky top-0 z-10 backdrop-blur-md">
+          <div className="text-xl font-display font-black text-primary-green uppercase tracking-[0.1em]">
+            Menu
           </div>
           <button
             onClick={onClose}
             aria-label="Close menu"
-            className="p-2 text-gov-black"
+            className="p-2.5 bg-gov-grey-light rounded-full text-gov-black hover:bg-primary-green hover:text-white transition-all duration-300 group"
           >
-            <X className="w-6 h-6" />
+            <X className="w-5 h-5 transition-transform duration-300 group-hover:rotate-90" />
           </button>
         </div>
 
-        <div className="p-4">
+        <div className="p-6 flex-1 flex flex-col space-y-1">
           <Link
             href="/"
-            className="block py-3 text-sm font-body font-medium text-gov-black border-b border-gov-grey-border"
+            className="block py-4 text-base font-body font-bold text-gov-black border-b border-gov-grey-border/30 hover:text-primary-green transition-colors"
             onClick={onClose}
           >
             {t("nav.home")}
@@ -426,14 +451,21 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
 
           <Link
             href="/contact"
-            className="block py-3 text-sm font-body font-medium text-gov-black border-b border-gov-grey-border"
+            className="block py-4 text-base font-body font-bold text-gov-black border-b border-gov-grey-border/30 hover:text-primary-green transition-colors mt-4"
             onClick={onClose}
           >
             {t("nav.contact")}
           </Link>
         </div>
+
+        {/* Bottom Drawer Footer */}
+        <div className="p-6 bg-gov-grey-light/50 mt-auto border-t border-gov-grey-border/50">
+          <p className="text-xs text-gov-grey-mid font-body font-medium uppercase tracking-widest text-center">
+            {t("site.countyGovernmentOf")} Busia
+          </p>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -454,27 +486,31 @@ function MobileDropdown({
     <div className="border-b border-gov-grey-border">
       <button
         onClick={onToggle}
-        className="flex items-center justify-between w-full py-3 text-sm font-body font-medium text-gov-black"
+        className="flex items-center justify-between w-full py-4 text-base font-body font-bold text-gov-black hover:text-primary-green transition-colors group"
       >
         {label}
         <ChevronDown
-          className={`w-4 h-4 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+          className={`w-4 h-4 transition-transform duration-300 ${isExpanded ? "rotate-180 text-primary-green" : "text-gov-grey-mid group-hover:text-primary-green"}`}
         />
       </button>
-      {isExpanded && (
-        <div className="pb-2 pl-4">
+      <div 
+        className={`overflow-hidden transition-all duration-300 ease-in-out ${
+          isExpanded ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
+        }`}
+      >
+        <div className="pb-4 pl-4 pt-1 space-y-1 relative before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[2px] before:bg-primary-green/20">
           {items.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="block py-2 text-sm font-body text-gov-grey-mid hover:text-primary-green transition-colors"
+              className="block py-2.5 text-sm font-body text-gov-grey-mid hover:text-primary-green hover:translate-x-1 transition-all duration-300"
               onClick={onClose}
             >
               {item.label}
             </Link>
           ))}
         </div>
-      )}
+      </div>
     </div>
   );
 }
